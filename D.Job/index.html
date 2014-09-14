@@ -1,0 +1,292 @@
+﻿<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+    <title>D.Job Manager</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Pragma" content="no-cache"> 
+    <meta http-equiv="Cache-Control" content="no-cache"> 
+    <meta http-equiv="Expires" content="0"> 
+<!--[if IE 8]>
+    <meta http-equiv="X-UA-Compatible" content="IE=7">
+<![endif]-->
+    <!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="css/reset.css">
+    <link rel="stylesheet" type="text/css" href="css/jquery-ui-1.10.4.custom.css" />
+    <!-- Javascript -->
+    <script src="js/yui-min.js" charset="utf-8"></script>
+    <script src="js/jquery-1.10.2.js"></script>
+    <script src="js/jquery-ui-1.10.4.custom.js"></script>
+
+    <!-- custom -->
+    <style>
+        #layout {
+            position: relative;
+            margin: 0 auto; /* center in viewport */
+            width: 1024px; /* fix page width */
+            height: 768px;
+            letter-spacing: 0;
+            word-spacing: 0;
+        }
+
+        #hd {
+            position: absoulte;
+            width: 1024px;
+            height: 120px;
+        }
+
+        #ft {
+            position: absolute;
+            width: 1024px;
+            height: 40px;
+            top: 728px;
+        }
+
+        #bd {
+            position: absolute;
+            width: 1024px;
+            height: 608px;
+            top: 120px;
+        }
+
+        #login {
+            position: relative;
+            width: 240px;
+            height: 128px;
+            margin: 80px auto;
+            padding: 20px;
+            background: #efefef;
+            -mos-border-radius: 10px;
+            border-radius: 10px;
+        }
+
+        #menu {
+            position: absolute;
+            width:140px;
+            height: 600px;
+            top: 0;
+            left: 0;
+        }
+
+        #main {
+            position: relative;
+            width: 880px;
+            height: 600px;
+            top: 0;
+            left: 142px;
+        }
+
+        #main_hd {
+
+        }
+
+        #main_bd {
+
+        }
+
+        #main_ft {
+
+        }
+
+        .alignLeft {
+            text-align: left;
+        }
+
+        .alignRight {
+            text-align: right;
+        }
+
+        .px10 {
+            width: 10px;
+        }
+
+        .px20 {
+            width: 20px;
+        }
+
+        .px40 {
+            width: 40px;
+        }
+
+        .px60 {
+            width: 60px;
+        }
+
+        .px80 {
+            width: 80px;
+        }
+
+        .px100 {
+            width: 100px;
+        }
+
+        .px108 {
+            width: 108px;
+        }
+
+        .px110 {
+            width: 110px;
+        }
+
+        .px120 {
+            width: 120px;
+        }
+
+        .px140 {
+            width: 140px;
+        }
+
+        .px160 {
+            width: 160px;
+        }
+
+        .px180 {
+            width: 180px;
+        }
+
+        .px200 {
+            width: 200px;
+        }
+
+        .px220 {
+            width: 220px;
+        }
+
+        .px240 {
+            width: 240px;
+        }
+
+        .px260 {
+            width: 260px;
+        }
+
+        .px280 {
+            width: 280px;
+        }
+
+        .px300 {
+            width: 300px;
+        }
+
+        .px320 {
+            width: 320px;
+        }
+
+        button.yui3-button {
+            position: relative;
+            width: 20px;
+            height: 20px;
+            font-family: Verdana, Arial, sans-sefir;
+            padding: 2px;
+            margin: 2px;
+        }
+
+        button.yui3-button span {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 2px;
+            left: 2px;
+            background-image: url('css/images/ui-icons_222222_256x240.png');
+        }
+
+        #btnLogin span.ui-icon {
+            background-position: -208px -96px;
+        }
+
+        #btnClear span.ui-icon {
+            background-position: -176px -96px;
+        }
+
+        #menu button.yui3-button {
+            width: 120px;
+            height: 30px;
+        }
+
+        #main_bd table  {
+            border: 1px solid #e3e3e3;
+        }
+        #main_bd table tr {
+            border: 1px solid #e3e3e3;
+        }
+        #main_bd table tr th{
+            border: 1px solid #e3e3e3;
+            vertical-align: middle;
+            width: 108px;
+        }
+        #main_bd table tr td{
+            border: 1px solid #e3e3e3;
+            width: 108px;
+        }
+    </style>
+    <script type="text/javascript" >
+
+    var gY = YUI( {filter: "raw", defaultGraphicEngine: "canvas"} ).use('anim', 'button-group', 'charts', 'charts-legend', 'console', 'cookie', 'datasource-io', 'datasource-jsonschema', 'datatable-base', 'datatable-sort', 'datatable-datasource', 'dd', 'dd-plugin', 'event', 'event-base', 'io', 'io-base', 'io-upload-iframe', 'json', 'json-parse', 'json-stringify', 'node', 'node-base', 'node-load', 'panel', 'uploader', 'yui' );
+        /* declare var */
+    var hd,
+        bd,
+        ft,
+        assets = 'assets/',
+        html = '.html',
+        usr = {};
+    var login, cooked, cook, checkUsr;
+    var menu, menu_btn, main, main_hd, main_bd, main_ft;
+
+    
+    </script>
+  </head>
+  <body class="yui3-cssreset yui3-skin-sam">
+    <div id="layout">
+      <div id="hd"></div>
+      <div id="bd"></div>
+      <div id="ft"></div>
+    </div>
+    <script>
+    YUI().use('anim', 'button-group', 'charts', 'charts-legend', 'console', 'cookie', 'datasource-io', 'datasource-jsonschema', 'datatable-base', 'datatable-sort', 'datatable-datasource', 'dd', 'dd-plugin', 'event', 'event-base', 'io', 'io-base', 'io-upload-iframe', 'json', 'json-parse', 'json-stringify', 'node', 'node-base', 'node-load', 'panel', 'uploader', function(Y) {
+        hd = Y.one('#hd');
+        bd = Y.one('#bd');
+        ft = Y.one('#ft');
+        if (Y.Cookie.get('djob_manager')) {
+            bd.load( 'assets/cooked.html' );
+        } else {
+            bd.load( 'assets/login.html', function() { 
+                /* login listener */
+                checkUsr = function( _obj ) {
+                    _obj.power = 1;
+                    _obj.name = gY.one('#username').get('value');
+                    _obj.pass = gY.one('#userpass').get('value');
+                }
+
+                Y.one('#btnLogin').on('click', function(e) {
+                    checkUsr( usr );
+    
+                    if (1 === usr.power) {
+                        bd.load( 'assets/cooked.html', function() {
+                            menu = Y.one('#menu');
+                            main = Y.one('#main');
+                            main_hd = Y.one('#main_hd');
+                            main_bd = Y.one('#main_bd');
+                            main_ft = Y.one('#main_ft');
+    
+                            menu.load( 'assets/menu.html', function() {
+                    
+                                menu_btn = new Y.ButtonGroup({
+                                    srcNode: '#menu_btn',
+                                    type: 'radio',
+                                    on: {
+                                        'selectionChange' : function(e) {
+                                             var selected = menu_btn.getSelectedButtons()[ 0 ];
+                                             main_bd.load( assets + selected.get('id').replace('menu-','') + html );
+                        
+                                        }
+                                    }
+                                }).render()
+                            });
+                        });
+                    }
+                });
+            });
+        }
+    });
+    </script>
+  </body>
+</html>

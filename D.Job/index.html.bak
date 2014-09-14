@@ -1,0 +1,299 @@
+<html class="yui3-js-enabled"><div id="yui3-css-stamp" style="position: absolute !important; visibility: hidden !important" class=""></div><head>
+    <title>D.Job Manager</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+<!--[if IE 8]>
+    <meta http-equiv="X-UA-Compatible" content="IE=7">
+<![endif]-->
+    <!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="css/reset.css">
+<!--    <link rel="stylesheet" type="text/css" href="css/jquery-ui-1.10.4.custom.css" /> -->
+    <!-- Javascript -->
+    <script src="js/yui-min.js"></script>
+<!--    <script src="js/jquery-1.10.2.js"></script> -->
+<!--    <script src="js/jquery-ui-1.10.4.custom.js"></script> -->
+
+    <!-- custom -->
+    <script src="js/tmpl.js"></script>
+    <style>
+        #layout {
+            position: relative;
+            margin: 0 auto; /* center in viewport */
+            width: 1024px; /* fix page width */
+            height: 768px;
+            letter-spacing: 0;
+            word-spacing: 0;
+        }
+
+        #hd {
+            position: absoulte;
+            width: 1024px;
+            height: 120px;
+        }
+
+        #ft {
+            position: absolute;
+            width: 1024px;
+            height: 40px;
+            top: 728px;
+        }
+
+        #bd {
+            position: absolute;
+            width: 1024px;
+            height: 608px;
+            top: 120px;
+        }
+
+        #login {
+            position: relative;
+            width: 240px;
+            height: 128px;
+            margin: 80px auto;
+            padding: 20px;
+            background: #efefef;
+            -mos-border-radius: 10px;
+            border-radius: 10px;
+        }
+
+        #menu {
+            position: absolute;
+            width:140px;
+            height: 600px;
+            top: 0;
+            left: 0;
+        }
+
+        #main {
+            position: relative;
+            width: 880px;
+            height: 600px;
+            border: 1px solid grey;
+            top: 0;
+            left: 142px;
+        }
+
+        #main_hd {
+
+        }
+
+        #main_bd {
+
+        }
+
+        #main_ft {
+
+        }
+
+        .alignLeft {
+            text-align: left;
+        }
+
+        .alignRight {
+            text-align: right;
+        }
+
+        .px10 {
+            width: 10px;
+        }
+
+        .px20 {
+            width: 20px;
+        }
+
+        .px40 {
+            width: 40px;
+        }
+
+        .px60 {
+            width: 60px;
+        }
+
+        .px80 {
+            width: 80px;
+        }
+
+        .px100 {
+            width: 100px;
+        }
+
+        .px120 {
+            width: 120px;
+        }
+
+        .px140 {
+            width: 140px;
+        }
+
+        .px160 {
+            width: 160px;
+        }
+
+        .px180 {
+            width: 180px;
+        }
+
+        .px200 {
+            width: 200px;
+        }
+
+        .px220 {
+            width: 220px;
+        }
+
+        .px240 {
+            width: 240px;
+        }
+
+        .px260 {
+            width: 260px;
+        }
+
+        .px280 {
+            width: 280px;
+        }
+
+        .px300 {
+            width: 300px;
+        }
+
+        .px320 {
+            width: 320px;
+        }
+
+        button.yui3-button {
+            position: relative;
+            width: 20px;
+            height: 20px;
+            font-family: Verdana, Arial, sans-sefir;
+            padding: 2px;
+            margin: 2px;
+        }
+
+        button.yui3-button span {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 2px;
+            left: 2px;
+            background-image: url('css/images/ui-icons_222222_256x240.png');
+        }
+
+        #btnLogin span.ui-icon {
+            background-position: -208px -96px;
+        }
+
+        #btnClear span.ui-icon {
+            background-position: -176px -96px;
+        }
+
+        #menu button.yui3-button {
+            width: 120px;
+            height: 30px;
+        }
+    </style>
+    <script type="text/javascript">
+
+    YUI( {filter: "raw", defaultGraphicEngine: "canvas"} ).use('anim', 'button-group', 'charts', 'charts-legend', 'console', 'cookie', 'datasource-io', 'datasource-jsonschema', 'datatable-base', 'datatable-sort', 'datatable-datasource', 'dd', 'dd-plugin', 'event', 'io-base', 'io-upload-iframe', 'json', 'json-parse', 'json-stringify', 'node', 'panel', 'uploader', function( Y ) {
+        /* declare var */
+        var hd = Y.one('#hd'), 
+            bd = Y.one('#bd'), 
+            ft = Y.one('#ft'), 
+            usr = {};
+        var login, cooked, cook;
+        var menu, menu_btn, main, main_hd, main_bd, main_ft;
+
+        /* draw hd, ft */    
+        
+
+        /* draw bd */
+        if (Y.Cookie.get('djob_manager')) {
+            bd.setHTML( genHTML( 'cooked' ) );
+        } else {
+            bd.setHTML( genHTML( 'login' ) );
+        }
+
+        /* login listener */
+        var checkUser = function( _obj ) {
+            _obj.power = 1;
+            _obj.name = Y.one('#username').get('value');
+            _obj.pass = Y.one('#userpass').get('value');
+        }
+
+        /* event listener */
+        Y.one('#btnLogin').on('click', function(e) {
+            checkUser( usr );
+
+            if (1 === usr.power) {
+                /* menu */
+                /* main */
+                bd.setHTML( genHTML( 'cooked' ) );
+                menu = Y.one('#menu');
+                main = Y.one('#main');
+                main_hd = Y.one('#main_hd');
+                main_bd = Y.one('#main_bd');
+                main_ft = Y.one('#main_ft');
+
+                menu.setHTML( genHTML( 'menu' ) );
+                
+                menu_btn = new Y.ButtonGroup({
+                    srcNode: '#menu_btn',
+                    type: 'radio',
+                    on: {
+                        'selectionChange' : function(e) {
+                             var selected = menu_btn.getSelectedButtons()[ 0 ];
+                             main_bd.setHTML( genHTML( 'input', selected.get('id').replace('menu-','') ) );
+                    
+                        }
+                    }
+                }).render()
+            }
+        });
+
+
+    });
+    
+    </script>
+  </head>
+  <body class="yui3-cssreset yui3-skin-sam">
+    <div id="layout">
+      <div id="hd"></div>
+      <div id="bd">
+        <div class="login" id="login">
+          <table>
+            <caption>D.Job Web Manager</caption>
+            <tbody>
+              <tr>
+                <td class="alignRight" colspan="3"><hr></td>
+              </tr>
+              <tr>
+                <th class="alignLeft px80"></th>
+                <th class="px40">:</th>
+                <td><input type="text" id="username"></td>
+              </tr>
+              <tr>
+                <td class="alignRight" colspan="3"><hr></td>
+              </tr>
+              <tr>
+                <th class="alignLeft px80"></th>
+                <th class="px40">:</th>
+                <td><input type="password" id="userpass"></td>
+              </tr>
+              <tr>
+                <td class="alignRight" colspan="3"><hr></td>
+              </tr>
+              <tr>
+                <td class="alignRight" colspan="3">
+                  <button id="btnLogin" class="yui3-button" title=""><span class="ui-icon"></span></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div id="ft"></div>
+    </div>
+  </body>
+</html>
