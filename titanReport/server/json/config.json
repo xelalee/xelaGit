@@ -1,0 +1,12 @@
+{
+    "http" : 8080,
+    "https" : 8443,
+    "dbServer" : "localhost",
+    "dbPort" : 3306,
+    "dbRoot" : "root",
+    "dbPass" : "",
+    "dbUser" : "titan",
+    "dbUPass" : "titan168",
+    "dbName" : "titanReport",
+    "zipPass" : "ttw4report"
+}

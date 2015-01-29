@@ -1,0 +1,351 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>TitanWALL Report Server</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+<!--[if IE 8]>
+    <meta http-equiv="X-UA-Compatible" content="IE=7">
+<![endif]-->
+<!-- css -->
+    <link rel="stylesheet" type="text/css" href="css/jquery-ui.css" />
+    <link rel="stylesheet" type="text/css" href="css/jquery-ui.structure.css" />
+    <link rel="stylesheet" type="text/css" href="css/jquery-ui.theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/jquery.dataTables.css" />
+<!-- JS Start -->
+<!-- jquery -->
+    <script type="text/javascript" src="js/jquery-1.11.2.min.js"></script>
+    <script type="text/javascript" src="js/jquery-ui.min.js"></script>
+<!-- jquery plugins -->
+    <script type="text/javascript" src="js/jquery.cookie.js"></script>
+    <script type="text/javascript" src="js/highcharts.js"></script>
+    <script type="text/javascript" src="js/highcharts-3d.js"></script>
+    <script type="text/javascript" src="js/highcharts-more.js"></script>
+    <script type="text/javascript" src="js/exporting.js"></script>
+    <script type="text/javascript" src="js/solid-gauge.js"></script>
+    <script type="text/javascript" src="js/jquery.dataTables.js"></script>
+<!-- custom js -->
+
+<!-- custom css -->
+    <link rel="stylesheet" type="text/css" href="css/custom.css" /> 
+<script type="text/javascript">
+// force redirect to https
+//if ('http:' === window.location.protocol)
+//    window.location = 'https:' + window.location.href.substr(5);
+
+// fix ie's indexOf issue
+if (!Array.prototype.indexOf) {
+    Array.prototype.indexOf = function (searchElement /*, fromIndex */ ) {
+        "use strict";
+        if (this == null) 
+            throw new TypeError();
+        
+        var t = Object(this);
+        var len = t.length >>> 0;
+        if (len === 0) 
+            return -1;
+        var n = 0;
+        if (arguments.length > 1) {
+            n = Number(arguments[1]);
+            // shortcut for verifying if it's NaN
+            if (n != n) 
+                n = 0;
+            else if (n != 0 && n != Infinity && n != -Infinity) 
+                n = (n > 0 || -1) * Math.floor(Math.abs(n));
+        }
+        if (n >= len) 
+            return -1;
+
+        var k = n >= 0 ? n : Math.max(len - Math.abs(n), 0);
+        for (; k < len; k++) {
+            if (k in t && t[k] === searchElement) 
+                return k;
+        }
+        return -1;
+    }
+}
+
+// fix older env,
+if (!Object.keys) {
+  Object.keys = (function () {
+    var hasOwnProperty = Object.prototype.hasOwnProperty,
+        hasDontEnumBug = !({toString: null}).propertyIsEnumerable('toString'),
+        dontEnums = [
+          'toString',
+          'toLocaleString',
+          'valueOf',
+          'hasOwnProperty',
+          'isPrototypeOf',
+          'propertyIsEnumerable',
+          'constructor'
+        ],
+        dontEnumsLength = dontEnums.length;
+
+    return function (obj) {
+      if (typeof obj !== 'object' && typeof obj !== 'function' || obj === null) throw new TypeError('Object.keys called on non-object');
+
+      var result = [];
+
+      for (var prop in obj) 
+        if (hasOwnProperty.call(obj, prop)) result.push(prop);
+
+      if (hasDontEnumBug) {
+        for (var i=0; i < dontEnumsLength; i++) 
+          if (hasOwnProperty.call(obj, dontEnums[i])) result.push(dontEnums[i]);
+      }
+      return result;
+    };
+  })();
+}
+
+// add plugin for object length calc
+Object.size = function(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key))
+            size++;
+    }
+    return size;
+}
+
+// custom javascript 
+// define global vars
+
+$(document).ready( function() {
+    var gObj   = {};
+    var gConf  = {};
+    var gIndex = 0;
+    var gMenu  = {};
+    var gItem  = {};
+    var gLabel = 'label';
+    var gNav   = {};
+    var gFlag  = true;
+
+    function callLogin() {
+        $.ajax({
+            url: 'json/menu.json',
+            datatype: 'json',
+            success: function(data) {
+                gMenu = data;
+            }
+        }).done( function() {
+            $.ajax({
+                url: 'json/item.json',
+                datatype: 'json',
+                success: function(data) {
+                    gItem = data;
+                }
+            }).done( function() {
+                callTmpl( 'main', callMain );
+            });
+        });
+    }
+
+    function callMain( html ) {
+        $('#main').html( html );
+        callTmpl( 'menu', callMenu );
+    }
+
+    function callMenu( html ) {
+        // add menu
+        $('#menu').html( html );
+        $('#menu > ul').accordion({
+            collapsible: true,
+            active: false,
+            heightStyle: "content"
+        });
+
+        $('#menu ul li h3').on('click', function(e) {
+            gNav.h3ID = $(this).parents('li').attr('id');
+        });
+                
+        $('#menu ul li ul li h4').on('click', function(e) {
+            gNav.h4ID = $(this).parents('li').attr('id');
+            gNav.iID = gNav.h4ID.replace('menu', 'item');
+            callTmpl( 'item', callItem ); 
+        });
+
+        $('#menu-0 h3').click();
+        $('#menu-0-0 h4').click();
+    }
+
+    function callItem( html ) {
+        $('#item').html( html );
+        $('#item_hd').html( '<b>' + gMenu[ gNav.h3ID ][ gLabel ] + '&nbsp;&nbsp;&nbsp;&gt;&gt;&nbsp;&nbsp;&nbsp;' + gMenu[ gNav.h4ID ][ gLabel ] + '</b>' );
+        switch( gNav.h3ID )
+        {
+        case 'menu-0':
+            // portal
+            callTmpl( gNav.iID, callPortal );
+            break;
+        default: 
+            switch( gNav.h4ID )
+            {
+            case 'menu-1-0':
+            case 'menu-1-1':
+            case 'menu-5-1':
+            case 'menu-6-0':
+            case 'menu-6-1':
+            case 'menu-6-2':
+                // tabs
+                callTmpl( gNav.iID, callTabs ); 
+                break;
+            default:
+                // table
+                callTmpl( gNav.iID, callMix ); 
+            }
+        }
+    }
+
+    function callHtml( html ) {
+
+    }
+
+    function callPortal( html ) {
+        $('#item_main').html( html );   
+
+        $( ".column" ).sortable({
+          connectWith: ".column",
+          handle: ".portlet-header",
+          cancel: ".portlet-toggle",
+          placeholder: "portlet-placeholder ui-corner-all"
+        });
+     
+        $( ".portlet" )
+          .addClass( "ui-widget ui-widget-content ui-helper-clearfix ui-corner-all" )
+          .find( ".portlet-header" )
+            .addClass( "ui-widget-header ui-corner-all" )
+            .prepend( "<span class='ui-icon ui-icon-minusthick portlet-toggle'></span>");
+     
+        $( ".portlet-toggle" ).click(function() {
+          var icon = $( this );
+          icon.toggleClass( "ui-icon-minusthick ui-icon-plusthick" );
+          icon.closest( ".portlet" ).find( ".portlet-content" ).toggle();
+        });
+
+        var tbl = {};
+        switch( gNav.h4ID )
+        {
+        case 'menu-0-0':
+            $('#' + gNav.iID + '-0 div.portlet-content').html( callDemo( gNav.iID + '-0' ) );
+            $('#' + gNav.iID + '-1 div.portlet-content').html( );
+
+
+            break;
+        case 'menu-0-1':
+
+            break;
+        case 'menu-0-2':
+
+            break;
+        case 'menu-0-3':
+
+            break;
+        }
+    }
+
+    function callTabs( html ) {
+        $('#item_main').html( html );   
+        $('.tabs').tabs();
+
+        var dt = {};
+        var ds = {};
+        var tbl = {};
+        switch( gNav.h4ID )
+        {
+        case 'menu-1-0':
+            $('#' + gNav.iID + '-0').html( callDemo( gNav.iID + '-0' ) );
+            
+            break;
+        case 'menu-6-0':
+
+            break;
+        }
+    }
+
+    function callMix( html ) {
+         $('#item_main').html( html );
+         $('#' + gNav.iID).html( callDemo( gNav.iID ) );
+
+         var dt = {};
+         var ds = {};
+         var tbl = {};
+
+         switch( gNav.iID )
+         {
+         case 'item-2-0':
+
+             break;
+         case 'item-3-0':
+
+             break;
+         case 'item-5-0':
+
+             break;
+         case 'item-5-2':
+
+             break;
+         case 'item-5-3':
+
+            break;
+         case 'item-5-4':
+
+            break;
+         }
+    }
+
+    function callTable( html ) {
+         $('#item_main').html( html );   
+
+    }
+
+    function callChart( html ) {
+         $('#item_main').html( html );   
+
+    }
+
+    function callTmpl( tmpl, callback ) {
+        $.ajax({
+            url: 'tmpl/' + tmpl + '.tmpl',
+            success: function(data) {
+                callback( callParser( tmpl, data ) );
+            }
+        });
+    }
+
+    function callParser( tmpl, data ) {
+        switch( tmpl )
+        {
+        case 'menu':
+            for (var x in gMenu)
+                data = data.replace( '@@@' + x + '@@@', gMenu[ x ][ gLabel ] );
+            break;
+        default: 
+            for (var x in gItem)
+                data = data.replace( '@@@' + x + '@@@', gItem[ x ][ gLabel ] );
+        }
+        return data;
+    }
+
+    function callDemo( item ) {
+        var data;
+        
+        return data;
+    }
+
+    // get config 
+    callLogin();
+});
+
+</script>
+</head>
+<body>
+  <div id="layout">
+    <div id="header"></div>
+    <div id="main"></div>
+    <div id="footer"></div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "item-0-0-0" : {
+    "label" : "System Information"
+  },
+  "item-0-0-1" : {
+    "label" : "Resource Utilization"
+  },
+  "item-0-1-0" : {
+    "label" : "Top by Traffic"
+  },
+  "item-0-1-1" : {
+    "label" : "Top by Session"
+  },
+  "item-0-2-0" : {
+    "label" : "Top File Extension"
+  },
+  "item-0-2-1" : {
+    "label" : "Top Virus Name"
+  },
+  "item-0-2-2" : {
+    "label" : "Top Affected Host"
+  },
+  "item-0-2-3" : {
+    "label" : "Top Blocked Host"
+  },
+  "item-0-3-0" : {
+    "label" : "Online End Point Status"
+  },
+  "item-0-3-1" : {
+    "label" : "Security Risk Status"
+  },
+  "item-1-0-0" : {
+    "label" : "Bandwidth/Sessions"
+  },
+  "item-1-1-0" : {
+    "label" : "Top App by Bandwidth"
+  },
+  "item-1-1-0" : {
+    "label" : "Top App by Sessions"
+  }
+}

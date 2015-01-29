@@ -1,0 +1,63 @@
+{
+  "type" :
+  {
+    "1" : "Traffic",
+    "2" : "Threat",
+    "3" : "Config",
+    "4" : "System"
+  },
+  "subtype" : 
+  {
+    "virus" :
+    {
+      "0x00000001" : "Virus Detction"
+    },
+    "attack_protection" :
+    {
+      "0x00000100" : "Block Ping to WAN Interface",
+      "0x00000200" : "Port Scan",
+      "0x00000300" : "TCP Flooding",
+      "0x00000400" : "UDP Flooding Protection",
+      "0x00000500" : "Block ICMP Protection",
+      "0x00000600" : "Block Fragmented Packets",
+      "0x00000700" : "Block Multicast Packets",
+      "0x00000800" : "Log Dropped Packets Destined to TitanWALL",
+      "0x00000900" : "SYN Flood",
+      "0x00000A00" : "Echo Storm Threshold",
+      "0x00000B00" : "ICMP Flood Threshold"
+    },
+    "system_defined_attack" :
+    {
+      "0x00010000" : ""
+    },
+    "acl" :
+    {
+      "0x01000000" : "Drop",
+      "0x02000000" : "Permit",
+      "0x03000000" : "Accounting"
+    }
+  },
+  "flag" : 
+  {
+    "0x00000001" : "Drop by ACL",
+    "0x00000002" : "Drop by QoS",
+    "0x00000004" : "Drop by AV",
+    "0x00000008" : "Drop by App",
+    "0x00000010" : "Drop by Webfilter",
+    "0x00000020" : "Drop by WebThreat",
+    "0x00000040" : "Drop by Network Rep",
+    "0x00000080" : "Drop by IPS",
+
+    "0x00010000" : "Match ACL",
+    "0x00020000" : "Match QoS",
+    "0x00040000" : "Match AV",
+    "0x00080000" : "Match App",
+    "0x00100000" : "Match Webfilter",
+    "0x00200000" : "Match Web Threat",
+    "0x00400000" : "Match Network Rep",
+    "0x00800000" : "Match IPS",
+
+    "0x80000000" : "XToWan",
+    "0x40000000" : "WanToX"
+  }
+}

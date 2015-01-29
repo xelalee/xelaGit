@@ -1,0 +1,5 @@
+var httpS  = require('./httpServer.js');
+httpS.http.createServer(httpS.requestHandler).listen(8080);
+console.log('Server running @ http://127.0.0.1:8080/');
+
+

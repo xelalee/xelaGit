@@ -1,0 +1,107 @@
+{
+  "menu-0" : {
+    "label" : "Dashboard"
+  },
+  "menu-0-0" : {
+    "label" : "System"
+  },
+  "menu-0-1" : {
+    "label" : "Network"
+  },
+  "menu-0-2" : {
+    "label" : "Security/Threat"
+  },
+  "menu-0-3" : {
+    "label" : "End Point Status"
+  },
+  "menu-1" : {
+    "label" : "App/Bandwidth"
+  },
+  "menu-1-0" : {
+    "label" : "Traffic Summary"
+  },
+  "menu-1-1" : {
+    "label" : "Traffic"
+  },
+  "menu-1-2" : {
+    "label" : "Categories by Bandwidth"
+  },
+  "menu-1-3" : {
+    "label" : "Top Users/Host/IP by Bandwidth"
+  },
+  "menu-1-4" : {
+    "label" : "Top Users/Host/IP by Sessions"
+  },
+  "menu-1-5" : {
+    "label" : "Top Destination by Bandwidth"
+  },
+  "menu-1-6" : {
+    "label" : "Top Destination by Sessions"
+  },
+  "menu-2" : {
+    "label" : "Security"
+  },
+  "menu-2-0" : {
+    "label" : "Malware/Virus"
+  },
+  "menu-2-1" : {
+    "label" : "File Extension"
+  },
+  "menu-2-2" : {
+    "label" : "Host Victims"
+  },
+  "menu-2-3" : {
+    "label" : "Top Virus Receivers Over Email"
+  },
+  "menu-2-4" : {
+    "label" : "Top Virus Receivers Over HTTP" 
+  },
+  "menu-2-5" : {
+    "label" : "Top Virus Receivers Over FTP"
+  },
+  "menu-2-6" : {
+    "label" : "Top Virus Receivers Over CIFS"
+  },
+  "menu-2-7" : {
+    "label" : "Attack Detected"
+  },  
+  "menu-3" : {
+    "label" : "VPN"
+  },
+  "menu-3-0" : {
+    "label" : "Top Traffic Usage Trend"
+  },
+  "menu-3-1" : {
+    "label" : "Top Dial-Up VPN Users"
+  },
+  "menu-3-2" : {
+    "label" : "Top Users of IPSec VPN Dialup Tunnel by Bandwidth"
+  },
+  "menu-3-3" : {
+    "label" : "Top Site-to-Site IPSec Tunnels by Bandwidth"
+  },
+  "menu-3-4" : {
+    "label" : "Top Dial-Up IPSec Tunnels by Bandwidth"
+  },
+  "menu-4" : {
+    "label" : "Logs"
+  },
+  "menu-4-0" : {
+    "label" : "Admin Login Summary"
+  },
+  "menu-4-1" : {
+    "label" : "System Activity Summary"
+  },
+  "menu-5" : {
+    "label" : "Settings"
+  },
+  "menu-5-0" : {
+    "label" : "Users"
+  },
+  "menu-5-1" : {
+    "label" : "Devices"
+  },
+  "menu-5-2" : {
+    "label" : "Server"
+  }
+}

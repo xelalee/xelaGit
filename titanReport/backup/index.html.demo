@@ -1,0 +1,1485 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>TitanWALL web manager</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+<!--[if IE 8]>
+    <meta http-equiv="X-UA-Compatible" content="IE=7">
+<![endif]-->
+<!-- css -->
+    <link rel="stylesheet" type="text/css" href="css/jquery-ui.css" />
+    <link rel="stylesheet" type="text/css" href="css/jquery-ui.structure.css" />
+    <link rel="stylesheet" type="text/css" href="css/jquery-ui.theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/jquery.dataTables.css" />
+<!-- JS Start -->
+<!-- jquery -->
+    <script type="text/javascript" src="js/jquery-1.11.2.min.js"></script>
+    <script type="text/javascript" src="js/jquery-ui.min.js"></script>
+<!-- jquery plugins -->
+    <script type="text/javascript" src="js/plugins/jquery.cookie.js"></script>
+    <script type="text/javascript" src="js/highcharts.js"></script>
+    <script type="text/javascript" src="js/highcharts-3d.js"></script>
+    <script type="text/javascript" src="js/highcharts-more.js"></script>
+    <script type="text/javascript" src="js/exporting.js"></script>
+    <script type="text/javascript" src="js/solid-gauge.js"></script>
+    <script type="text/javascript" src="js/jquery.dataTables.js"></script>
+<!-- custom js -->
+
+<!-- custom css -->
+    <link rel="stylesheet" type="text/css" href="css/custom.css" /> 
+<script type="text/javascript">
+// force redirect to https
+if ('http:' === window.location.protocol)
+    window.location = 'https:' + window.location.href.substr(5);
+
+// fix ie's indexOf issue
+if (!Array.prototype.indexOf) {
+    Array.prototype.indexOf = function (searchElement /*, fromIndex */ ) {
+        "use strict";
+        if (this == null) 
+            throw new TypeError();
+        
+        var t = Object(this);
+        var len = t.length >>> 0;
+        if (len === 0) 
+            return -1;
+        var n = 0;
+        if (arguments.length > 1) {
+            n = Number(arguments[1]);
+            // shortcut for verifying if it's NaN
+            if (n != n) 
+                n = 0;
+            else if (n != 0 && n != Infinity && n != -Infinity) 
+                n = (n > 0 || -1) * Math.floor(Math.abs(n));
+        }
+        if (n >= len) 
+            return -1;
+
+        var k = n >= 0 ? n : Math.max(len - Math.abs(n), 0);
+        for (; k < len; k++) {
+            if (k in t && t[k] === searchElement) 
+                return k;
+        }
+        return -1;
+    }
+}
+
+// fix older env,
+if (!Object.keys) {
+  Object.keys = (function () {
+    var hasOwnProperty = Object.prototype.hasOwnProperty,
+        hasDontEnumBug = !({toString: null}).propertyIsEnumerable('toString'),
+        dontEnums = [
+          'toString',
+          'toLocaleString',
+          'valueOf',
+          'hasOwnProperty',
+          'isPrototypeOf',
+          'propertyIsEnumerable',
+          'constructor'
+        ],
+        dontEnumsLength = dontEnums.length;
+
+    return function (obj) {
+      if (typeof obj !== 'object' && typeof obj !== 'function' || obj === null) throw new TypeError('Object.keys called on non-object');
+
+      var result = [];
+
+      for (var prop in obj) 
+        if (hasOwnProperty.call(obj, prop)) result.push(prop);
+
+      if (hasDontEnumBug) {
+        for (var i=0; i < dontEnumsLength; i++) 
+          if (hasOwnProperty.call(obj, dontEnums[i])) result.push(dontEnums[i]);
+      }
+      return result;
+    };
+  })();
+}
+
+// add plugin for object length calc
+Object.size = function(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key))
+            size++;
+    }
+    return size;
+}
+
+// custom javascript 
+// define global vars
+
+$(document).ready( function() {
+    var gObj   = {};
+    var gConf  = {};
+    var gIndex = 0;
+    var gPath  = '../';
+    var gTmpl  = 'tmpl/';
+    var gAsset = 'assets/';
+    var gMenu  = {};
+    var gItem  = {};
+    var gLabel = 'label';
+    var gNav   = {};
+    var gFlag  = true;
+
+    function callLogin() {
+        $.ajax({
+            url: gAsset + 'menu.json',
+            datatype: 'json',
+            success: function(data) {
+                gMenu = data;
+            }
+        }).done( function() {
+            $.ajax({
+                url: gAsset + 'item.json',
+                datatype: 'json',
+                success: function(data) {
+                    gItem = data;
+                }
+            }).done( function() {
+                callTmpl( 'main', callMain );
+            });
+        });
+    }
+
+    function callMain( html ) {
+        $('#main').html( html );
+        callTmpl( 'menu', callMenu );
+    }
+
+    function callMenu( html ) {
+        // add menu
+        $('#menu').html( html );
+        $('#menu > ul').accordion({
+            collapsible: true,
+            active: false,
+            heightStyle: "content"
+        });
+
+        $('#menu ul li h3').on('click', function(e) {
+            gNav.h3ID = $(this).parents('li').attr('id');
+        });
+                
+        $('#menu ul li ul li h4').on('click', function(e) {
+            gNav.h4ID = $(this).parents('li').attr('id');
+            gNav.iID = gNav.h4ID.replace('menu', 'item');
+            callTmpl( 'container', callContainer ); 
+        });
+
+        $('#menu-0 h3').click();
+        $('#menu-0-0 h4').click();
+    }
+
+    function callContainer( html ) {
+        $('#container').html( html );
+        $('#container_hd').html( '<b>' + gMenu[ gNav.h3ID ][ gLabel ] + '&nbsp;&nbsp;&nbsp;&gt;&gt;&nbsp;&nbsp;&nbsp;' + gMenu[ gNav.h4ID ][ gLabel ] + '</b>' );
+        switch( gNav.h3ID )
+        {
+        case 'menu-0':
+            // portal
+            callTmpl( gNav.iID, callPortal );
+            break;
+        default: 
+            switch( gNav.h4ID )
+            {
+            case 'menu-1-0':
+            case 'menu-1-1':
+            case 'menu-5-1':
+            case 'menu-6-0':
+            case 'menu-6-1':
+            case 'menu-6-2':
+                // tabs
+                callTmpl( gNav.iID, callTabs ); 
+                break;
+            default:
+                // table
+                callTmpl( gNav.iID, callMix ); 
+            }
+        }
+    }
+
+    function callPortal( html ) {
+        $('#container_main').html( html );   
+
+        $( ".column" ).sortable({
+          connectWith: ".column",
+          handle: ".portlet-header",
+          cancel: ".portlet-toggle",
+          placeholder: "portlet-placeholder ui-corner-all"
+        });
+     
+        $( ".portlet" )
+          .addClass( "ui-widget ui-widget-content ui-helper-clearfix ui-corner-all" )
+          .find( ".portlet-header" )
+            .addClass( "ui-widget-header ui-corner-all" )
+            .prepend( "<span class='ui-icon ui-icon-minusthick portlet-toggle'></span>");
+     
+        $( ".portlet-toggle" ).click(function() {
+          var icon = $( this );
+          icon.toggleClass( "ui-icon-minusthick ui-icon-plusthick" );
+          icon.closest( ".portlet" ).find( ".portlet-content" ).toggle();
+        });
+
+        var tbl = {};
+        switch( gNav.h4ID )
+        {
+        case 'menu-0-0':
+            $('#' + gNav.iID + '-0 div.portlet-content').html( callDemo( gNav.iID + '-0' ) );
+            $('#' + gNav.iID + '-1 div.portlet-content').html( '<div id="cpu" style="width: 200px; height: 120px; float: left"></div><div id="mem" style="width: 200px; height: 120px; float: left"></div>' );
+
+    var gaugeOptions = {
+
+        chart: {
+            type: 'solidgauge'
+        },
+
+        title: null,
+
+        pane: {
+            center: ['50%', '85%'],
+            size: '140%',
+            startAngle: -90,
+            endAngle: 90,
+            background: {
+                backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                innerRadius: '60%',
+                outerRadius: '100%',
+                shape: 'arc'
+            }
+        },
+
+        tooltip: {
+            enabled: false
+        },
+
+        // the value axis
+        yAxis: {
+            stops: [
+                [0.1, '#55BF3B'], // green
+                [0.5, '#DDDF0D'], // yellow
+                [0.9, '#DF5353'] // red
+            ],
+            lineWidth: 0,
+            minorTickInterval: null,
+            tickPixelInterval: 400,
+            tickWidth: 0,
+            title: {
+                y: -70
+            },
+            labels: {
+                y: 16
+            }
+        },
+
+        plotOptions: {
+            solidgauge: {
+                dataLabels: {
+                    y: 5,
+                    borderWidth: 0,
+                    useHTML: true
+                }
+            }
+        }
+    };
+
+    // The speed gauge
+    $('#cpu').highcharts(Highcharts.merge(gaugeOptions, {
+        yAxis: {
+            min: 0,
+            max: 100,
+            title: {
+                text: 'CPU'
+            }
+        },
+
+        credits: {
+            enabled: false
+        },
+
+        series: [{
+            name: 'CPU',
+            data: [80],
+            dataLabels: {
+                format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
+                       '<span style="font-size:12px;color:silver"></span></div>'
+            },
+            tooltip: {
+                valueSuffix: ' km/h'
+            }
+        }]
+
+    }));
+
+    // The RPM gauge
+    $('#mem').highcharts(Highcharts.merge(gaugeOptions, {
+        yAxis: {
+            min: 0,
+            max: 100,
+            title: {
+                text: 'MEMORY'
+            }
+        },
+
+        series: [{
+            name: 'MEMORY',
+            data: [1],
+            dataLabels: {
+                format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y:.1f}</span><br/>' +
+                       '<span style="font-size:12px;color:silver"></span></div>'
+            },
+            tooltip: {
+                valueSuffix: ' revolutions/min'
+            }
+        }]
+
+    }));
+
+    // Bring life to the dials
+    setInterval(function () {
+        // Speed
+        var chart = $('#cpu').highcharts(),
+            point,
+            newVal,
+            inc;
+
+        if (chart) {
+            point = chart.series[0].points[0];
+            inc = Math.round((Math.random() - 0.5) * 100);
+            newVal = point.y + inc;
+
+            if (newVal < 0 || newVal > 100) {
+                newVal = point.y - inc;
+            }
+
+            point.update(newVal);
+        }
+
+        // RPM
+        chart = $('#mem').highcharts();
+        if (chart) {
+            point = chart.series[0].points[0];
+            //inc = Math.random() - 0.5;
+            inc = Math.round((Math.random() - 0.5) * 100);
+            newVal = point.y + inc;
+
+            if (newVal < 0 || newVal > 100) {
+                newVal = point.y - inc;
+            }
+
+            point.update(newVal);
+        }
+    }, 2000);
+
+
+
+            break;
+        case 'menu-0-1':
+            $('#' + gNav.iID + '-0 div.portlet-content').html( callDemo( gNav.iID + '-0' ) );
+            tbl[ gNav.iID + '-0' ] = $('#table-' + gNav.iID + '-0').DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]]
+            } );
+
+            tbl[ gNav.iID + '-0' ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID + '-0' ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+
+            $('#' + gNav.iID + '-1 div.portlet-content').html( callDemo( gNav.iID + '-1' ) );
+            tbl[ gNav.iID + '-1' ] = $('#table-' + gNav.iID + '-1').DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top">rt<"bottom"><"clear">'
+            } );
+
+            tbl[ gNav.iID + '-1' ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID + '-1' ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+
+            $('#' + gNav.iID + '-2 div.portlet-content').html( callDemo( gNav.iID + '-2' ) );
+            tbl[ gNav.iID + '-2' ] = $('#table-' + gNav.iID + '-2').DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top"i>rt<"bottom"><"clear">'
+            } );
+
+            tbl[ gNav.iID + '-2' ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID + '-2' ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+
+            $('#' + gNav.iID + '-3 div.portlet-content').html( callDemo( gNav.iID + '-3' ) );
+            tbl[ gNav.iID + '-3' ] = $('#table-' + gNav.iID + '-3').DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top"i>rt<"bottom"l><"clear">'
+            } );
+
+            tbl[ gNav.iID + '-3' ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID + '-3' ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+
+            $('#' + gNav.iID + '-4 div.portlet-content').html( callDemo( gNav.iID + '-4' ) );
+            tbl[ gNav.iID + '-4' ] = $('#table-' + gNav.iID + '-4').DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top"i>rt<"bottom"fl><"clear">'
+            } );
+
+            tbl[ gNav.iID + '-4' ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID + '-4' ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+
+            $('#' + gNav.iID + '-5 div.portlet-content').html( callDemo( gNav.iID + '-5' ) );
+            tbl[ gNav.iID + '-5' ] = $('#table-' + gNav.iID + '-5').DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top"i>rt<"bottom"flp><"clear">'
+            } );
+
+            tbl[ gNav.iID + '-5' ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID + '-5' ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+            break;
+        case 'menu-0-2':
+            $('#' + gNav.iID + '-0 div.portlet-content').html( callDemo( gNav.iID + '-0' ) );
+            $('#' + gNav.iID + '-1 div.portlet-content').html( callDemo( gNav.iID + '-1' ) );
+            $('#' + gNav.iID + '-2 div.portlet-content').html( callDemo( gNav.iID + '-2' ) );
+            $('#' + gNav.iID + '-3 div.portlet-content').html( callDemo( gNav.iID + '-3' ) );
+            $('#' + gNav.iID + '-4 div.portlet-content').html( callDemo( gNav.iID + '-4' ) );
+            $('#' + gNav.iID + '-5 div.portlet-content').html( callDemo( gNav.iID + '-5' ) );
+            $('#' + gNav.iID + '-6 div.portlet-content').html( callDemo( gNav.iID + '-6' ) );
+            $('#' + gNav.iID + '-7 div.portlet-content').html( callDemo( gNav.iID + '-7' ) );
+            break;
+        case 'menu-0-3':
+            $('#' + gNav.iID + '-0 div.portlet-content').html( callDemo( gNav.iID + '-0' ) );
+            $('#' + gNav.iID + '-1 div.portlet-content').html( callDemo( gNav.iID + '-1' ) );
+            break;
+        }
+    }
+
+    function callTabs( html ) {
+        $('#container_main').html( html );   
+        $('.tabs').tabs();
+
+        var dt = {};
+        var ds = {};
+        var tbl = {};
+        switch( gNav.h4ID )
+        {
+        case 'menu-1-0':
+            dt[ gNav.iID + '-0' ] = [
+              { bandwidth: 12, datetime: "2014-12-21 00:00:00" },
+              { bandwidth: 15, datetime: "2014-12-21 01:00:00" },
+              { bandwidth: 11, datetime: "2014-12-21 02:00:00" },
+              { bandwidth: 18, datetime: "2014-12-21 03:00:00" },
+              { bandwidth: 11, datetime: "2014-12-21 04:00:00" },
+            ];
+            ds[ gNav.iID + '-0' ] = [
+[1230771600000, 12],
+[1231117200000, 15],
+[1231549200000, 11],
+[1231808400000, 18],
+[1232586000000, 11]
+            ]            
+            $('#' + gNav.iID + '-0').html( callDemo( gNav.iID + '-0' ) );
+            
+            for (var i=0, len=dt[ gNav.iID + '-0' ].length; i<len; i++) {
+                $('#table-' + gNav.iID + '-0 tbody').append( '<tr><td></td><td>' + dt[ gNav.iID + '-0' ][ i ].bandwidth + '</td><td>' + dt[ gNav.iID + '-0' ][ i ].datetime + '</td></tr>' );
+            }
+
+            $('#div-' + gNav.iID + '-0').highcharts({
+                chart: { type: 'area' }, 
+                title : { text : null },
+                xAxis: { type: 'datetime' },
+                yAxis: {
+                    title: {
+                        text: 'Traffic'
+                    },
+                    labels: {
+                        formatter: function () {
+                            return this.value;
+                        }
+                    }
+                },
+                series: [ { name: "Bandwidth", data: ds[ gNav.iID + '-0' ] } ]
+            });
+
+            tbl[ gNav.iID + '-0' ] = $('#table-' + gNav.iID + '-0').DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top">rt<"bottom"><"clear">'
+            } );
+
+            tbl[ gNav.iID + '-0' ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID + '-0' ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+            
+
+            $('#' + gNav.iID + '-1').html( callDemo( gNav.iID + '-1' ) );
+            $('#' + gNav.iID + '-2').html( callDemo( gNav.iID + '-2' ) );
+            break;
+        case 'menu-6-0':
+            dt[ gNav.iID + '-0' ] = [
+              { traffic: 12, datetime: "2014-12-21 00:00:00" },
+              { traffic: 15, datetime: "2014-12-21 01:00:00" },
+              { traffic: 11, datetime: "2014-12-21 02:00:00" },
+              { traffic: 18, datetime: "2014-12-21 03:00:00" },
+              { traffic: 11, datetime: "2014-12-21 04:00:00" },
+            ];
+            ds[ gNav.iID + '-0' ] = [
+[1230771600000, 12],
+[1231117200000, 15],
+[1231549200000, 11],
+[1231808400000, 18],
+[1232586000000, 11]
+            ]
+            $('#' + gNav.iID + '-0').html( callDemo( gNav.iID + '-0' ) );
+
+            for (var i=0, len=dt[ gNav.iID + '-0' ].length; i<len; i++) {
+                $('#table-' + gNav.iID + '-0 tbody').append( '<tr><td></td><td>' + dt[ gNav.iID + '-0' ][ i ].traffic + '</td><td>' + dt[ gNav.iID + '-0' ][ i ].datetime + '</td></tr>' );
+            }
+
+            $('#div-' + gNav.iID + '-0').highcharts({
+
+        chart: {
+            type: 'column',
+            margin: 75,
+            options3d: {
+                enabled: true,
+                alpha: 10,
+                beta: 25,
+                depth: 70
+            }
+        },
+        title: {
+            text: '3D chart with null values'
+        },
+        subtitle: {
+            text: 'Notice the difference between a 0 value and a null point'
+        },
+        plotOptions: {
+            column: {
+                depth: 25
+            }
+        },
+        xAxis: {
+            categories: Highcharts.getOptions().lang.shortMonths
+        },
+        yAxis: {
+            opposite: true
+        },
+        series: [{
+            name: 'Sales',
+            data: [2, 3, null, 4, 0, 5, 1, 4, 6, 3]
+        }]
+
+            });
+
+            tbl[ gNav.iID + '-0' ] = $('#table-' + gNav.iID + '-0').DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top">rt<"bottom"><"clear">'
+            } );
+
+            tbl[ gNav.iID + '-0' ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID + '-0' ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+            break;
+        }
+    }
+
+    function callMix( html ) {
+         $('#container_main').html( html );
+         $('#' + gNav.iID).html( callDemo( gNav.iID ) );
+
+         var dt = {};
+         var ds = {};
+         var tbl = {};
+
+         switch( gNav.iID )
+         {
+         case 'item-2-0':
+            dt[ gNav.iID ] = [
+              { fileExt: 'ext', count: "1831" },
+              { fileExt: 'com', count: "1231" },
+              { fileExt: 'bat', count: "123" },
+              { fileExt: 'jpg', count: "321" },
+              { fileExt: 'txt', count: "111" },
+            ];
+            $('#' + gNav.iID ).html( callDemo( gNav.iID ) );
+
+            for (var i=0, len=dt[ gNav.iID ].length; i<len; i++) {
+                $('#table-' + gNav.iID + ' tbody').append( '<tr><td></td><td>' + dt[ gNav.iID ][ i ].fileExt + '</td><td>' + dt[ gNav.iID ][ i ].count + '</td></tr>' );
+            }
+
+            $('#div-' + gNav.iID).highcharts({
+                chart: { type: 'bar' },
+                title : { text : null },
+                xAxis: { 
+                    title: null
+                },
+                yAxis: {
+                    title: {
+                        text: null
+                    }
+                },
+                series: [ { name: "Count", data: [ 1233, 1231, 123, 321, 111 ] } ]
+            });
+
+            tbl[ gNav.iID ] = $('#table-' + gNav.iID).DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top">rt<"bottom"><"clear">'
+            } );
+
+            tbl[ gNav.iID ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+         
+             break;
+         case 'item-3-0':
+            $('#' + gNav.iID ).html( callDemo( gNav.iID ) );
+            dt[ gNav.iID ] = [
+                { securityRisk: "...", count: 12553 },
+                { securityRisk: "!..", count: 1232 },
+                { securityRisk: ".!.", count: 2123 },
+                { securityRisk: "..!", count: 1223 },
+                { securityRisk: "!.!", count: 123 },
+            ];
+
+            for (var i=0, len=dt[ gNav.iID ].length; i<len; i++) {
+                $('#table-' + gNav.iID + ' tbody').append( '<tr><td></td><td>' + dt[ gNav.iID ][ i ].securityRisk + '</td><td>' + dt[ gNav.iID ][ i ].count + '</td></tr>' );
+            }
+
+            $('#div-' + gNav.iID).highcharts({
+                chart: { type: 'bubble', zoomType: 'xy' },
+                title : { text : null },
+series: [{
+            data: [[97, 36, 79], [94, 74, 60], [68, 76, 58], [64, 87, 56], [68, 27, 73], [74, 99, 42], [7, 93, 87], [51, 69, 40], [38, 23, 33], [57, 86, 31]]
+        
+        }]
+            });
+
+            tbl[ gNav.iID ] = $('#table-' + gNav.iID).DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top">rt<"bottom"><"clear">'
+            } );
+
+            tbl[ gNav.iID ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+             break;
+         case 'item-5-0':
+            $('#' + gNav.iID ).html( callDemo( gNav.iID ) );
+            dt[ gNav.iID ] = [
+                { virusName: "...", count: 1253 },
+                { virusName: "!..", count: 1232 },
+                { virusName: ".!.", count: 2123 },
+                { virusName: "..!", count: 1223 },
+                { virusName: "!.!", count: 123 },
+            ];
+
+            for (var i=0, len=dt[ gNav.iID ].length; i<len; i++) {
+                $('#table-' + gNav.iID + ' tbody').append( '<tr><td></td><td>' + dt[ gNav.iID ][ i ].virusName + '</td><td>' + dt[ gNav.iID ][ i ].count + '</td></tr>' );
+            }
+
+            $('#div-' + gNav.iID).highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: 1,//null,
+            plotShadow: false
+        },
+        title: {
+            text: 'Top Virus Name'
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: true,
+                    format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                    style: {
+                        color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                    }
+                }
+            }
+        },
+        series: [{
+            type: 'pie',
+            name: 'percentage',
+            data: [
+                ['Firefox',   45.0],
+                ['IE',       26.8],
+                {
+                    name: 'Chrome',
+                    y: 12.8,
+                    sliced: true,
+                    selected: true
+                },
+                ['Safari',    8.5],
+                ['Opera',     6.2],
+                ['Others',   0.7]
+            ]
+        }]
+
+            });
+
+            tbl[ gNav.iID ] = $('#table-' + gNav.iID).DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top">rt<"bottom"><"clear">'
+            } );
+
+            tbl[ gNav.iID ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+             break;
+         case 'item-5-2':
+            $('#' + gNav.iID ).html( callDemo( gNav.iID ) );
+            dt[ gNav.iID ] = [
+                { virusName: "...", count: 1253 },
+                { virusName: "!..", count: 1232 },
+                { virusName: ".!.", count: 2123 },
+                { virusName: "..!", count: 1223 },
+                { virusName: "!.!", count: 123 },
+            ];
+
+            for (var i=0, len=dt[ gNav.iID ].length; i<len; i++) {
+                $('#table-' + gNav.iID + ' tbody').append( '<tr><td></td><td>' + dt[ gNav.iID ][ i ].virusName + '</td><td>' + dt[ gNav.iID ][ i ].count + '</td></tr>' );
+            }
+
+            $('#div-' + gNav.iID).highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: 1,//null,
+            plotShadow: false
+        },
+        title: {
+            text: 'Top Virus Name'
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: false
+                },
+                showInLegend: true
+            }
+        },
+        series: [{
+            type: 'pie',
+            name: 'percentage',
+            data: [
+                ['Firefox',   45.0],
+                ['IE',       26.8],
+                {
+                    name: 'Chrome',
+                    y: 12.8,
+                    sliced: true,
+                    selected: true
+                },
+                ['Safari',    8.5],
+                ['Opera',     6.2],
+                ['Others',   0.7]
+            ]
+        }]
+
+            });
+
+            tbl[ gNav.iID ] = $('#table-' + gNav.iID).DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top">rt<"bottom"><"clear">'
+            } );
+
+            tbl[ gNav.iID ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+             break;
+         case 'item-5-3':
+            $('#' + gNav.iID ).html( callDemo( gNav.iID ) ); 
+            dt[ gNav.iID ] = [
+                { virusName: "...", count: 1253 },
+                { virusName: "!..", count: 1232 },
+                { virusName: ".!.", count: 2123 },
+                { virusName: "..!", count: 1223 },
+                { virusName: "!.!", count: 123 },
+            ];   
+
+            for (var i=0, len=dt[ gNav.iID ].length; i<len; i++) {
+                $('#table-' + gNav.iID + ' tbody').append( '<tr><td></td><td>' + dt[ gNav.iID ][ i ].virusName + '</td><td>' + dt[ gNav.iID ][ i ].count + '</td></tr>' );
+            }    
+
+            $('#div-' + gNav.iID).highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: 0,
+            plotShadow: false
+        },
+        title: {
+            text: 'Browser<br>shares',
+            align: 'center',
+            verticalAlign: 'middle',
+            y: 50
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+        },
+        plotOptions: {
+            pie: {
+                dataLabels: {
+                    enabled: true,
+                    distance: -50,
+                    style: {
+                        fontWeight: 'bold',
+                        color: 'white',
+                        textShadow: '0px 1px 2px black'
+                    }
+                },
+                startAngle: -90,
+                endAngle: 90,
+                center: ['50%', '75%']
+            }
+        },
+        series: [{
+            type: 'pie',
+            name: 'Browser share',
+            innerSize: '50%',
+            data: [
+                ['Firefox',   45.0],
+                ['IE',       26.8],
+                ['Chrome', 12.8],
+                ['Safari',    8.5],
+                ['Opera',     6.2],
+                {
+                    name: 'Others',
+                    y: 0.7,
+                    dataLabels: {
+                        enabled: false
+                    }
+                }
+            ]
+        }]
+            });
+
+            tbl[ gNav.iID ] = $('#table-' + gNav.iID).DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top">rt<"bottom"><"clear">'
+            } );
+
+            tbl[ gNav.iID ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+            break;
+         case 'item-5-4':
+            $('#' + gNav.iID ).html( callDemo( gNav.iID ) );
+            dt[ gNav.iID ] = [
+                { virusName: "...", count: 1253 },
+                { virusName: "!..", count: 1232 },
+                { virusName: ".!.", count: 2123 },
+                { virusName: "..!", count: 1223 },
+                { virusName: "!.!", count: 123 },
+            ];
+
+            for (var i=0, len=dt[ gNav.iID ].length; i<len; i++) {
+                $('#table-' + gNav.iID + ' tbody').append( '<tr><td></td><td>' + dt[ gNav.iID ][ i ].virusName + '</td><td>' + dt[ gNav.iID ][ i ].count + '</td></tr>' );
+            }
+
+
+            $('#div-' + gNav.iID).highcharts({
+        chart: {
+            type: 'pie',
+            options3d: {
+                enabled: true,
+                alpha: 45,
+                beta: 0
+            }
+        },
+        title: {
+            text: 'Browser market shares at a specific website, 2014'
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                depth: 35,
+                dataLabels: {
+                    enabled: true,
+                    format: '{point.name}'
+                }
+            }
+        },
+        series: [{
+            type: 'pie',
+            name: 'Browser share',
+            data: [
+                ['Firefox',   45.0],
+                ['IE',       26.8],
+                {
+                    name: 'Chrome',
+                    y: 12.8,
+                    sliced: true,
+                    selected: true
+                },
+                ['Safari',    8.5],
+                ['Opera',     6.2],
+                ['Others',   0.7]
+            ]
+        }]
+            } );
+
+            tbl[ gNav.iID ] = $('#table-' + gNav.iID).DataTable( {
+                "columnDefs": [ {
+                    "searchable": false,
+                    "orderable": false,
+                    "targets": 0
+                } ],
+                "order": [[ 1, 'asc' ]],
+                "dom": '<"top">rt<"bottom"><"clear">'
+            } );
+
+            tbl[ gNav.iID ].on( 'order.dt search.dt', function () {
+                tbl[ gNav.iID ].column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+                    cell.innerHTML = i+1;
+                } );
+            } ).draw();
+            break;
+         }
+    }
+
+    function callTable( html ) {
+         $('#container_main').html( html );   
+
+    }
+
+    function callChart( html ) {
+         $('#container_main').html( html );   
+
+    }
+
+    function callTmpl( tmpl, callback ) {
+        $.ajax({
+            url: gTmpl + tmpl + '.tmpl',
+            success: function(data) {
+                callback( callParser( tmpl, data ) );
+            }
+        });
+    }
+
+    function callParser( tmpl, data ) {
+        switch( tmpl )
+        {
+        case 'menu':
+            for (var x in gMenu)
+                data = data.replace( '@@@' + x + '@@@', gMenu[ x ][ gLabel ] );
+            break;
+        default: 
+            for (var x in gItem)
+                data = data.replace( '@@@' + x + '@@@', gItem[ x ][ gLabel ] );
+        }
+        return data;
+    }
+
+    function callDemo( item ) {
+        var data;
+        switch( item )
+        {
+        case 'item-0-0-0':
+            data = '<table id="table-dashboard_sys_info" class="DualList"><tbody><tr><th>System Name</th><td id="dashboard_sys_info-sysName">TitanWALL</td></tr><tr><th>Model</th><td id="dashboard_sys_info-model">TTW-4S</td></tr><tr><th>Primary Firmware</th><td id="dashboard_sys_info-primaryVer">6.2.1-97</td></tr><tr><th>Secondary Firmware</th><td id="dashboard_sys_info-secondaryVer">6.2.1-94</td></tr><tr><th>Signature Version</th><td id="dashboard_sys_info-sigVer">58.129</td></tr><tr><th>Sig Engine Version</th><td id="dashboard_sys_info-sigEng">v1.0</td></tr><tr><th>MD5 Engine Version</th><td id="dashboard_sys_info-md5Eng">v1.0</td></tr><tr><th>Serial Number</th><td id="dashboard_sys_info-serial">bb00000000</td></tr><tr><th>System Uptime</th><td id="dashboard_sys_info-sysUptime">1 days 1 hours 16 minutes</td></tr></tbody></table>';
+            break;
+        case 'item-0-0-1':
+            data = { cpuUtilization: "40.62", dramSize: 8192, flashSize: 4096, memoryUtilization: "55.56" };
+            break;
+        case 'item-0-1-0':
+            data = '<table id="table-' + item + '" class="display">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Source</th>';
+            data += '<th>Traffic</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.3.4</td>';
+            data += '<td>123</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.4.4</td>';
+            data += '<td>124</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.5.4</td>';
+            data += '<td>125</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.6.4</td>';
+            data += '<td>129</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.7.4</td>';
+            data += '<td>123</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.8.4</td>';
+            data += '<td>126</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.9.4</td>';
+            data += '<td>127</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.10.4</td>';
+            data += '<td>1230</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.11.4</td>';
+            data += '<td>12332</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.31.4</td>';
+            data += '<td>12223</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.13.4</td>';
+            data += '<td>12223</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.113.4</td>';
+            data += '<td>12355</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.32.4</td>';
+            data += '<td>12322</td>';
+            data += '</tr>';
+
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-0-1-1' :
+            data = '<table id="table-' + item + '" class="display">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Source</th>';
+            data += '<th>Application</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.3.4</td>';
+            data += '<td>Line</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>11.2.3.4</td>';
+            data += '<td>Skype</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.32.3.4</td>';
+            data += '<td>Facebook</td>';
+            data += '</tr>';
+
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-0-1-2' :
+            data = '<table id="table-' + item + '" class="display">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Source</th>';
+            data += '<th>Sessions</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.3.4</td>';
+            data += '<td>11</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>11.2.3.4</td>';
+            data += '<td>22</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.32.3.4</td>';
+            data += '<td>33</td>';
+            data += '</tr>';
+
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-0-1-3' :
+            data = '<table id="table-' + item + '" class="display">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Destination</th>';
+            data += '<th>Traffic</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.3.4</td>';
+            data += '<td>123</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>11.2.3.4</td>';
+            data += '<td>22222</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.32.3.4</td>';
+            data += '<td>555</td>';
+            data += '</tr>';
+
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-0-1-4' :
+            data = '<table id="table-' + item + '" class="display">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Destination</th>';
+            data += '<th>Application</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.3.4</td>';
+            data += '<td>Line</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>11.2.3.4</td>';
+            data += '<td>Skype</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.32.3.4</td>';
+            data += '<td>Facebook</td>';
+            data += '</tr>';
+
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-0-1-5' :
+            data = '<table id="table-' + item + '" class="display">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Destination</th>';
+            data += '<th>Sessions</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.2.3.4</td>';
+            data += '<td>123</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>11.2.3.4</td>';
+            data += '<td>3333</td>';
+            data += '</tr>';
+
+            data += '<tr>';
+            data += '<td></td>';
+            data += '<td>1.32.3.4</td>';
+            data += '<td>555</td>';
+            data += '</tr>';
+
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-1-0-0' :
+            data = '<div id="div-' + item + '"></div>';
+            data += '<table id="table-' + item + '">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Bandwidth</th>';
+            data += '<th>Datetime</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-1-0-1' :
+            data = '<div id="div-' + item + '"></div>';
+            data += '<table id="table-' + item + '">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Sessions</th>';
+            data += '<th>Datetime</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-1-0-2' :
+            data = '<div id="div-' + item + '"></div>';
+            data += '<table id="table-' + item + '">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Summary</th>';
+            data += '<th>Statistics</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-2-0' :
+            data = '<div id="div-' + item + '"></div>';
+            data += '<table id="table-' + item + '">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>File Extension</th>';
+            data += '<th>Count</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-3-0' :
+            data = '<div id="div-' + item + '"></div>';
+            data += '<table id="table-' + item + '">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Security Risk</th>';
+            data += '<th>Count</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-5-0' :
+            data = '<div id="div-' + item + '"></div>';
+            data += '<table id="table-' + item + '">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Virus Name</th>';
+            data += '<th>Count</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-5-2' :
+            data = '<div id="div-' + item + '"></div>';
+            data += '<table id="table-' + item + '">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Virus Over HTTP</th>';
+            data += '<th>Count</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-5-3' :
+            data = '<div id="div-' + item + '"></div>';
+            data += '<table id="table-' + item + '">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Virus Over FTP</th>';
+            data += '<th>Count</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        case 'item-5-4' :
+            data = '<div id="div-' + item + '"></div>';
+            data += '<table id="table-' + item + '">';
+            data += '<thead>';
+            data += '<tr>';
+            data += '<th></th>';
+            data += '<th>Virus Over CIFS</th>';
+            data += '<th>Count</th>';
+            data += '</tr>';
+            data += '</thead>';
+            data += '<tbody>';
+            data += '</tbody>';
+            data += '</table>';
+            break;
+        }
+        
+        return data;
+    }
+
+    // get config 
+    callLogin();
+});
+
+</script>
+</head>
+<body>
+  <div id="layout">
+    <div id="header"></div>
+    <div id="main"></div>
+    <div id="footer"></div>
+  </div>
+</body>
+</html>

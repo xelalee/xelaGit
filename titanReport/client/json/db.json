@@ -1,0 +1,127 @@
+{
+  "install" :
+  {
+    "Users" :
+    {
+      "col" :
+      {
+        "sno" : "int unsigned NOT NULL auto_increment",
+        "user" : "varchar(64) NOT NULL",
+        "pass" : "varchar(64) NOT NULL",
+        "name" : "varchar(64) NOT NULL",
+        "email" : "varchar(64) NOT NULL",
+        "remark" : "varchar(1) NOT NULL"
+      },
+      "key" : "PRIMARY KEY (`sno`)"
+    },
+    "Devices" :
+    {
+      "col" :
+      {
+        "sno" : "int unsigned NOT NULL auto_increment",
+        "serial" : "varchar(10) NOT NULL",
+        "addr" : "varchar(16) NOT NULL",
+        "port" : "varchar(5) NOT NULL",
+        "remark" : "varchar(1) NOT NULL"
+      },
+      "key" : "PRIMARY KEY (`sno`)"
+    }
+  },
+  "create" :
+  {
+    "Configuration" :
+    {
+      "col" :
+      {
+        "sno" : " int(11) unsigned NOT NULL auto_increment",
+        "receive_time" : "timestamp",
+        "dname" : "varchar(64)",
+        "serial" : "varchar(10) NOT NULL",
+        "type" : "varchar(1)",
+        "subtype" : "varchar(10)",
+        "host" : "varchar(64)",
+        "cmd" : "varchar(128)",
+        "admin" : "varchar(64)",
+        "client" : "varchar(10)",
+        "result" : "varchar(10)"
+      },
+      "key" : "PRIMARY KEY (`sno`)"
+    },
+    "System" :
+    {
+      "col" :
+      {
+        "sno" : "int unsigned NOT NULL auto_increment",
+        "receive_time" : "timestamp",
+        "dname" : "varchar(64)",
+        "serial" : "varchar(10) NOT NULL",
+        "type" : "varchar(1)",
+        "subtype" : "varchar(10)",
+        "eventid" : "varchar(20)",
+        "severity" : "varchar(10)",
+        "cpu" : "float",
+        "mem" : "float",
+        "disk" : "float"
+      },
+      "key" : "PRIMARY KEY (`sno`)"
+    },
+    "Threat" :
+    {
+      "col" :
+      {
+        "sno" : "int unsigned NOT NULL auto_increment",
+        "receive_time" : "timestamp",
+        "dname" : "varchar(64)",
+        "serial" : "varchar(10) NOT NULL",
+        "type" : "varchar(5)",
+        "subtype" : "varchar(10)",
+        "virusext" : "varchar(64)",
+        "virusname" : "varchar(64)",
+        "virusid" : "varchar(64)",
+        "infected_name" : "varchar(64)",
+        "time_generated" : "timestamp",
+        "id" : "varchar(30)",
+        "flag" : "varchar(20)",
+        "proto" : "varchar(16)",
+        "policy" : "varchar(40)",
+        "src" : "varchar(16)",
+        "dst" : "varchar(16)",
+        "sport" : "varchar(5)",
+        "dport" : "varchar(5)",
+        "from" : "varchar(64)",
+        "to" : "varchar(64)",
+        "repeatcnt" : "bigint"
+      },
+      "key" : "PRIMARY KEY (`sno`)"
+    },
+    "Traffic" :
+    {
+      "col" :
+      {
+        "sno" : "int unsigned NOT NULL auto_increment",
+        "receive_time" : "timestamp",
+        "dname" : "varchar(64)",
+        "serial" : "varchar(10) NOT NULL",
+        "type" : "varchar(1)",
+        "subtype" : "varchar(10)",
+        "id" : "varchar(30)",
+        "flag" : "varchar(20)",
+        "proto" : "varchar(16)",
+        "rule" : "varchar(40)",
+        "src" : "varchar(16)",
+        "dst" : "varchar(16)",
+        "sport" : "varchar(5)",
+        "dport" : "varchar(5)",
+        "natsrc" : "varchar(16)",
+        "natdst" : "varchar(16)",
+        "natsport" : "varchar(5)",
+        "natdport" : "varchar(5)",
+        "from_zone" : "varchar(64)",
+        "to_zone" : "varchar(64)",
+        "bytes_tx" : "bigint",
+        "bytes_rx" : "bigint"
+      },
+      "key" : "PRIMARY KEY (`sno`)"
+    }
+  }
+}
