@@ -34,7 +34,7 @@
       "col" :
       {
         "sno" : " int(11) unsigned NOT NULL auto_increment",
-        "receive_time" : "timestamp",
+        "receive_time" : "varchar(10)",
         "dname" : "varchar(64)",
         "serial" : "varchar(10) NOT NULL",
         "type" : "varchar(1)",
@@ -52,7 +52,7 @@
       "col" :
       {
         "sno" : "int unsigned NOT NULL auto_increment",
-        "receive_time" : "timestamp",
+        "receive_time" : "varchar(10)",
         "dname" : "varchar(64)",
         "serial" : "varchar(10) NOT NULL",
         "type" : "varchar(1)",
@@ -71,7 +71,7 @@
       "col" :
       {
         "sno" : "int unsigned NOT NULL auto_increment",
-        "receive_time" : "timestamp",
+        "receive_time" : "varchar(10)",
         "dname" : "varchar(64)",
         "serial" : "varchar(10) NOT NULL",
         "type" : "varchar(5)",
@@ -80,7 +80,7 @@
         "virusname" : "varchar(64)",
         "virusid" : "varchar(64)",
         "infected_name" : "varchar(64)",
-        "time_generated" : "timestamp",
+        "time_generated" : "varchar(10)",
         "id" : "varchar(30)",
         "flag" : "varchar(20)",
         "proto" : "varchar(16)",
@@ -100,7 +100,7 @@
       "col" :
       {
         "sno" : "int unsigned NOT NULL auto_increment",
-        "receive_time" : "timestamp",
+        "receive_time" : "varchar(10)",
         "dname" : "varchar(64)",
         "serial" : "varchar(10) NOT NULL",
         "type" : "varchar(1)",

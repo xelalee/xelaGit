@@ -3,16 +3,14 @@ var E = {};
 E.mysql = require('mysql');
 E.conf  = require( __dirname + '/json/config.json');
 E.db    = require( __dirname + '/json/db.json');
-E.reg   = /_\d{4}_\d{2}_\d{2}$/;
-E.regC  = /"/;
-E.flag  = false;
+E.reg   = /"/;
+E.regDU = /Devices|Users/;
 
-E.conn = function( type, table, data ) {
+E.conn = function( type, param, data, callback ) {
     var db,
         con,
         sql,
         date,
-        regD,
         json,
         query,
         table;
@@ -36,14 +34,12 @@ E.conn = function( type, table, data ) {
         con.query( sql, function( err, rows, fields ) {
             if (err)
                 throw err;
-            console.log( rows );
         });
 
         sql = "GRANT USAGE ON * . * TO '" + E.conf.dbUser + "'@'" + E.conf.dbServer + "' IDENTIFIED BY '" + E.conf.dbUPass + "'; ";
         con.query( sql, function( err, rows, fields ) {
             if (err)
                 throw err;
-            console.log( rows );
         });
 
         // create titan report database
@@ -51,21 +47,18 @@ E.conn = function( type, table, data ) {
         con.query( sql, function( err, rows, fields ) {
             if (err)
                 throw err;
-            console.log( rows );
         });
 
         sql = "GRANT ALL PRIVILEGES ON `" + E.conf.dbName + "` . * TO '" + E.conf.dbUser + "'@'" + E.conf.dbServer + "'; ";
         con.query( sql, function( err, rows, fields ) {
             if (err)
                 throw err;
-            console.log( rows );
         });
 
         sql = "USE " + E.conf.dbName + "; ";
         con.query( sql, function( err, rows, fields ) {
             if (err)
                 throw err;
-            console.log( rows );
         });
         // create titan report table
         for (var x in E.db[ type ]) 
@@ -77,16 +70,12 @@ E.conn = function( type, table, data ) {
             con.query( sql, function( err, rows, fields ) {
                 if (err)
                     throw err;
-                console.log( rows );
             });
         }
 
         con.end();
-
-        // create first daily database
-        E.conn('create');
         break;
-    case 'create':
+    case 'daily':
         // create today's database
         con = E.mysql.createConnection({
             host: E.conf.dbServer,
@@ -102,41 +91,18 @@ E.conn = function( type, table, data ) {
         sql = "CREATE DATABASE IF NOT EXISTS `" + db + "`; " ;
         con.query( sql, function( err, rows, fields ) {
             if (err)
-                throw err;
-            console.log( rows );
+                console.info( err );
         });
-
-        db = E.conf.dbName + '_' + date;
 
         sql = "GRANT ALL PRIVILEGES ON `" + db + "` . * TO '" + E.conf.dbUser + "'@'" + E.conf.dbServer + "'; ";
         con.query( sql, function( err, rows, fields ) {
             if (err)
-                throw err;
-            console.log( rows );
+                console.info( err );
         });
 
-        sql = "USE " + db + "; ";
-        con.query( sql, function( err, rows, fields ) {
-            if (err)
-                throw err;
-            console.log( rows );
-        });
-
-        // create titan report table
-        for (var x in E.db[ type ])
-        {
-            sql = "CREATE TABLE IF NOT EXISTS `" + x + "` (";
-            for (var y in E.db[ type ][ x ].col)
-                sql += "`" + y + "` " + E.db[ type ][ x ].col[ y ] + ",";
-            sql += E.db[ type ][ x ].key + ");";
-            con.query( sql, function( err, rows, fields ) {
-                if (err)
-                    throw err;
-                console.log( rows );
-            });
-        }
-        
         con.end();
+
+        E.conn('create');
         break;
     case 'check':
         con = E.mysql.createConnection({
@@ -149,18 +115,17 @@ E.conn = function( type, table, data ) {
         db = E.conf.dbName + '_' + date;
 
         con.connect();
-        sql = 'SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = "' + db + '";';
+        sql = 'SELECT count(*) as cnt FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = "' + db + '";';
         con.query( sql, function( err, rows, fields ) {
-            if ((1 === rows.length) && (E.reg.test(rows[ 0 ].SCHEMA_NAME)))
-                E.flag = true;
+            if ( err )
+                console.log( err );
+            else if (0 === rows[ 0 ].cnt)
+                E.conn('daily');
         });
         con.end();
-
-        if (!E.flag)
-            E.conn('create');
         break;
-    case 'insert':
-        // insert to today's database
+    case 'create':
+        // create table
         db = E.conf.dbName + '_' + date;
         con = E.mysql.createConnection({
             host: E.conf.dbServer,
@@ -172,37 +137,113 @@ E.conn = function( type, table, data ) {
 
         con.connect();
 
-        for (var i=0, len=data.length; i<len; i++)
-        {
-             // row data
-             var arrJ = data[ i ].split(';');
-             var arrR = [ 'sno' ];
-             var arrV = [ 0 ];
-             for (var j=0, jlen=arrJ.length; j<jlen; j++)
-             {
-                 var arrK = arrJ[ j ].split('=');
-                 arrR.push( arrK[ 0 ] );
-                 if (E.regC.test( arrK[ 1 ] ))
-                     arrV.push( arrK[ 1 ] );
-                 else
-                     arrV.push( '"' + arrK[ 1 ] + '"' );
-             }
-             sql = 'Insert INTO `' + table + '` (' + arrR.join(',') + ') VALUES (' + arrV.join(',') + ');';
-             console.log( sql );
-         }
-        /*
-        con.query( sql, function( err, rows, fields ) {
-            if (err)
-                throw err;
-            console.log( rows );
-        });
-        */
+        if (param) {
+            // create daily titan report table of serial
+            for (var x in E.db[ type ])
+            {
+                sql = "CREATE TABLE IF NOT EXISTS `" + x + "_" + param + "` (";
+                for (var y in E.db[ type ][ x ].col)
+                    sql += "`" + y + "` " + E.db[ type ][ x ].col[ y ] + ",";
+                sql += E.db[ type ][ x ].key + ");";
+                con.query( sql, function( err, rows ) {
+                    if (err)
+                        console.info( err );
+                });
+            }
+        } else {
+            // get devices' serial
+            sql = 'SELECT serial FROM ' + E.conf.dbName + '.`Devices` WHERE remark = "Y"';
 
+            con.query( sql, function( err, rows ) {
+                if (err)
+                    console.info( err );
+                else {
+                    // create daily titan report table of serial
+                    for (var i=0, len=rows.length; i<len; i++)
+                    {
+                        for (var x in E.db[ type ])
+                        {
+                            sql = "CREATE TABLE IF NOT EXISTS `" + x + "_" + rows[ i ].serial + "` (";
+                            for (var y in E.db[ type ][ x ].col)
+                                sql += "`" + y + "` " + E.db[ type ][ x ].col[ y ] + ",";
+                            sql += E.db[ type ][ x ].key + ");";
+                            con.query( sql, function( err, rows ) {
+                                if (err)
+                                    console.info( err );
+                            });
+                        }
+                    }
+                }
+            });
+        }
+        
         con.end();
+        break;
+    case 'insert':
+        // insert data
+        if (E.regDU.test( param )) 
+            db = E.conf.dbName;
+        else
+            db = E.conf.dbName + '_' + date;
+        con = E.mysql.createConnection({
+            host: E.conf.dbServer,
+            port: E.conf.dbPort,
+            user: E.conf.dbUser,
+            password: E.conf.dbUPass,
+            database: db
+        });
+
+        if ( data ) {
+            con.connect();
+            sql = '';
+            if (E.regDU.test( param )) {
+                var arrR = [];
+                var arrV = [];
+                
+                for (var x in data)
+                {
+                    arrR.push( x );
+                    arrV.push( data[ x ] );
+                }
+                sql = 'INSERT INTO `' + param + '` (' + arrR.join(',') + ') VALUES (' + arrV.join(',') + ');';
+                con.query( sql, function( err, rows ) {
+                    if (err)
+                        console.info( err );
+                });
+            } else {
+                for (var i=0, len=data.length; i<len; i++)
+                {
+                    // row data
+                    var arrJ = data[ i ].split(';');
+                    var arrR = [ 'sno' ];
+                    var arrV = [ 0 ];
+                    for (var j=0, jlen=arrJ.length; j<jlen; j++)
+                    {
+                        var arrK = arrJ[ j ].split('=');
+                        arrR.push( arrK[ 0 ] );
+                        if (E.reg.test( arrK[ 1 ] ))
+                            arrV.push( arrK[ 1 ] );
+                        else
+                            arrV.push( '"' + arrK[ 1 ] + '"' );
+                    }
+                    sql = 'INSERT INTO `' + param + '` (' + arrR.join(',') + ') VALUES (' + arrV.join(',') + ');';
+                    console.log( sql );
+                    con.query( { sql: sql, timeout: 10000 }, function( err, rows ) {
+                        if (err)
+                            console.log( err );
+                    });
+                }
+            }
+            con.end();
+        }
         break;
     case 'query':
         // query database
-        db = E.conf.dbName + '_' + date;
+        if (E.regDU.test( param )) 
+            db = E.conf.dbName;
+        else
+            db = E.conf.dbName + '_' + date;
+
         con = E.mysql.createConnection({
             host: E.conf.dbServer,
             port: E.conf.dbPort,
@@ -211,18 +252,19 @@ E.conn = function( type, table, data ) {
             database: db
         });
 
-/*
+        sql = data;
+
         con.connect();
-        con.query( sql, function( err, rows, fields ) {
+        con.query( sql, function( err, rows ) {
             if (err)
-                throw err;
-            console.log( rows );
+                console.info( err, null );
+            else
+                callback( null, json );
+            console.info( rows );
         });
         con.end();
-*/
         break;
     }
-
 };
 
 module.exports = E;

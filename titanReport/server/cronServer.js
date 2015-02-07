@@ -3,8 +3,7 @@
  * rands : set random 0 ~ 59 sec for 5min cron start, avoid 1 time if the same value
  * crons : set cronJob by type,
  *     type: daily for create daily database
- *           5min for get 7z from device
- *           min for if 5min failed
+ *           min for get 7z from device
  *
 **/
 var E   = {};
@@ -14,6 +13,7 @@ E.db    = require('./db.js');
 E.cron  = require('cron');
 E.exec  = require('child_process').exec;
 E.spawn = require('child_process').spawn;
+E.curl  = require('node-curl');
 
 E.rand  = {};
 E.reg   = /^[0-5][0-9]$/;
@@ -77,39 +77,56 @@ E.crons = function( type, serial, ip ) {
                 // check if database exists
                 E.db.conn('check');
                 // get device 7z to insert
-                var file_url = ip + '/tsr/' + serial + '_TSR.7z',
-                    file_name = serial + '_TSR.7z';
-                    file = E.fs.createWriteStream( __dirname + '/tmp/' + file_name),
+                var file_url = ip + '/tsr/' + serial + '_TSR.zip', //7z',
+                    file_name = serial + '_TSR.zip', //7z',
+                    file_path = __dirname + '/tmp/' + file_name,
+                    file = E.fs.createWriteStream( file_path ),
                     curl = E.spawn('curl', [file_url]);
 
-                console.log( 'get ' + file_name + ' @ ' + ip + ' @ ' + E.rand[ serial ] );
-                curl.stdout.on('data', function(data) { file.write(data); });
-
-                curl.stdout.on('end', function(data) {
-                    file.end();
-                
-                    console.log( 'unar -p "' + E.db.conf.zipPass + '" -D -f -o ' + __dirname + '/tmp/ ' + __dirname + '/tmp/' + serial + '_TSR.7z' );
-
-                    /*
-                    E.child = E.exec( 'unar -p "' + E.db.conf.zipPass + '" -D -f -o ' + __dirname + '/tmp/ ' + __dirname + '/tmp/' + serial + '_TSR.7z', function( error, stdout, stderr ) {
-                        if (error !== null) {
-                            //throw error;
-                            console.log( error );
-                        } else {
-                            // success
-                            console.log( E.rand[ serial ] );
+                console.info( 'get ' + file_name + ' @ ' + ip + ' @ ' + E.rand[ serial ] );
+                file.on('finish', function() {
+                    console.info( serial );
+                    //console.log( 'unar -p "' + E.db.conf.zipPass + '" -D -f -o ' + __dirname + '/tmp/ ' + __dirname + '/tmp/' + serial + '_TSR.7z' );
+                    
+                    console.log( 'unzip -o -P "' + E.db.conf.zipPass + '" -d ' + __dirname + '/tmp/ ' + __dirname + '/tmp/' + serial + '_TSR.zip' );
+                    
+                    E.child = E.exec( 'unzip -o -P "' + E.db.conf.zipPass + '" -d ' + __dirname + '/tmp/ ' + __dirname + '/tmp/' + serial + '_TSR.zip', function( err, stdout, stderr ) {
+                        if ( err !== null )
+                            console.info( err );
+                        else 
                             E.dbs( serial );
-                        }
                     });
-                    */
-                
                 });
-                
-                curl.on('exit', function(code) {
-                    if (code != 0)  {
-                        console.log('Failed: ' + code);
+
+                curl.stdout.on('data', function( data ) {
+                    file.write( data );
+                });
+
+                curl.stdout.on('end', function() {
+                    file.end();
+                });
+
+                curl.on('close', function( code ) {
+                    console.info( code );
+                });
+
+
+/*
+                E.curl( file_url, function( err ) {
+                    console.log( this.status );
+                    if ( 200 === parseInt( this.status ) ) {
+                        //console.info( this.header );
+                        file.write( this.body );
+                        file.end();
+                    } else {
+                        // 404 or somewhat happened, restart with new rand
+                        E.cronM[ serial ].stop();
+                        delete E.rand[ serial ];
+                        E.crons('min', serial, ip );
                     }
                 });
+*/
+
             },
             start: true
         });
